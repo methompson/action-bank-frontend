@@ -1,0 +1,28 @@
+.invisible {
+  display: none !important;
+}
+
+.contentSection {
+  flex: 1;
+  position: relative;
+
+}
+
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.click-through {
+  pointer-events: none;
+}
+
+.login.container {
+  position: absolute;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}

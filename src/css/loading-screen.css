@@ -1,0 +1,86 @@
+.loadingAnimationContainer {
+  width: 50px;
+  height: 50px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loadingAnimationA, .loadingAnimationB {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.loadingAnimationA {
+  width: 0px;
+  height: 0px;
+  background-color: transparent;
+  border-color: white;
+  border-style: solid;
+  border-radius: 50%;
+  border-width: 0px;
+  animation-name: loadingCircle;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+
+@keyframes loadingCircle {
+  0% {
+    width: 0px;
+    height: 0px;
+    border-width: 0px;
+  }
+
+  30% {
+    width: 50px;
+    height: 50px;
+    border-width: 26px;
+  }
+
+  60% {
+    width: 50px;
+    height: 50px;
+    border-width: 0px;
+  }
+}
+
+.loadingScreenOverlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  /* transition: opacity 0.25s ease; */
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: 99998;
+}
+
+.loadingScreenContainer {
+  transition: opacity 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.loadingScreenContent {
+  z-index: 99999;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.isLoading.loadingScreenContainer {
+  opacity: 1;
+}
+
+.isNotLoading.loadingScreenContainer {
+  opacity: 0;
+}

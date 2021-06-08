@@ -1,0 +1,23 @@
+@charset "utf-8";
+
+@import "../../node_modules/bulma/sass/utilities/initial-variables.sass";
+
+$test-color: rgb(255, 128, 128);
+
+$navbar-breakpoint: $tablet;
+// $footer-background-color: $test-color;
+// $background-color: $test-color;
+// $body-background-color: $test-color;
+// $code-background: $test-color;
+// $pre-background: $test-color;
+
+@import "../../node_modules/bulma/bulma.sass";
+
+.login.box {
+  background-color: $primary-light;
+}
+
+.navbar-menu.is-active {
+  position: fixed;
+  width: 100vw;
+}
