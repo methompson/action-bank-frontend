@@ -1,5 +1,13 @@
-.invisible {
+.gone {
   display: none !important;
+}
+
+.invisible {
+  opacity: 0;
+}
+
+.opacity-fade {
+  transition-duration: 150ms;
 }
 
 .contentSection {
@@ -24,5 +32,18 @@
   min-height: 100%;
   display: flex;
   justify-content: center;
+  flex-direction: column;
+}
+
+.exchange-title {
+  flex-direction: column;
+  align-items: start;
+}
+
+.larger {
+  font-size: 1.25rem;
+}
+
+.exchange-card .card-footer {
   flex-direction: column;
 }

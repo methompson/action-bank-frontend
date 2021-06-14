@@ -12,6 +12,6 @@ export const exchanges = (state: StoreType) => {
   return exchanges;
 };
 
-export const lastExchangeQuery = (state: StoreType) => {
-  return state.actionBank.lastTimeRetrieved;
-};
+export const lastExchangeQuery = (state: StoreType) => state.actionBank.lastTimeRetrieved;
+
+export const depositActionStatus = (state: StoreType) => state.actionBank.depositActionRequest;

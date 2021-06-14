@@ -52,7 +52,7 @@ class Navbar extends Component<Record<string, unknown>, MenuState> {
       : <Link to='/login' className="button is-primary" onClick={this.closeMenu} >Log In</Link>;
 
     const debug = loggedIn
-      ? <Link to='/debug' className='navbar-item'>Debug</Link>
+      ? <Link to='/debug' className='navbar-item' onClick={this.closeMenu} >Debug</Link>
       : null;
 
     const active = this.state.menuOpen ? 'is-active' : '';
@@ -83,7 +83,6 @@ class Navbar extends Component<Record<string, unknown>, MenuState> {
 
           <div className="navbar-end">
             <div className="navbar-item">
-              {/* Log In */}
               {logInOutButton}
             </div>
           </div>

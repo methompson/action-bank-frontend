@@ -6,6 +6,7 @@ import PageContent from 'ui/pages/page-content';
 import Navbar from 'ui/components/navbar';
 import Footer from 'ui/components/footer';
 import LoadingScreen from 'ui/components/loading-screen';
+import Messenger from 'ui/components/messenger';
 
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
 
   return (
     <div className='pageContainer'>
+      <Messenger />
 
       <Navbar />
 

@@ -1,7 +1,7 @@
-import { Component } from "react";
+import { Component } from 'react';
 import { connect } from 'react-redux';
 
-import { StoreType } from "store/store";
+import { StoreType } from 'store/store';
 import {
   actions,
   selectors,
@@ -9,61 +9,41 @@ import {
 
 import { Exchange } from 'store/action-bank/action-bank-types';
 
-interface ExchangeCardButtonProps {
-  title: string,
-  action: () => void,
-}
+import ExchangeCard from 'ui/components/exchangeCard';
+import ModalContainer from 'ui/components/modalContainer';
+import WithdrawalsModal from 'ui/components/withdrawalsModal';
+import DepositsModal from 'ui/components/depositsModal';
+import AddActionModal from 'ui/components/addActionModal';
 
-function ExchangeCardButton(props: ExchangeCardButtonProps) {
-  return <div className='card-footer-item button is-primary is-light'>{props.title}</div>;
-}
-
-interface ExchangeTitleProp {
-  exchange: Exchange,
-}
-
-function ExchangeCard(props: ExchangeTitleProp) {
-  return (
-    <div className="block">
-      <div className="card">
-        <header className="card-header">
-          <p className="card-header-title">{props.exchange.name}</p>
-        </header>
-        <div className="card-content">
-          <div className="content">
-            <p className="">
-              Withdrawal Actions: {props.exchange.withdrawalActions.length}
-            </p>
-            <p className="">
-              Deposit Actions: {props.exchange.depositActions.length}
-            </p>
-            <hr />
-            <p className="">
-              Withdrawals: {props.exchange.withdrawals.length}
-            </p>
-            <p className="">
-              Deposits: {props.exchange.deposits.length}
-            </p>
-          </div>
-        </div>
-        <footer className="card-footer">
-          <ExchangeCardButton title={'Add New Action'} action={() => {}} />
-          <ExchangeCardButton title={'Add Deposit'} action={() => {}} />
-          <ExchangeCardButton title={'Add Withdrawal'} action={() => {}} />
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-interface ExchangeClassPropsType {
+interface ExchangesClassPropsType {
   loggedIn: boolean,
   exchanges: Exchange[],
   lastExchangeQuery: number,
   getAllExchanges: () => void,
 }
 
-class ExchangesClass extends Component<ExchangeClassPropsType, unknown> {
+enum ModalType {
+  None,
+  AddAction,
+  Deposits,
+  Withdrawals,
+}
+
+interface ExchangesClassStateType {
+  modal: ModalType,
+  modalExchange: Exchange | null,
+}
+
+class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassStateType> {
+  constructor(props: ExchangesClassPropsType) {
+    super(props);
+
+    this.state = {
+      modal: ModalType.None,
+      modalExchange: null,
+    };
+  }
+
   checkExchanges = () => {
     this.props.getAllExchanges();
   };
@@ -74,18 +54,82 @@ class ExchangesClass extends Component<ExchangeClassPropsType, unknown> {
     }
   };
 
+  changeModalType = (type: ModalType, ex: Exchange | null) => {
+    this.setState({
+      modal: type,
+      modalExchange: ex,
+    });
+  };
+
+  closeModal = () => {
+    console.log('close');
+    this.changeModalType(ModalType.None, null);
+  };
+
+  showAddAction = (ex: Exchange) => {
+    console.log('addAction');
+    this.changeModalType(ModalType.AddAction, ex);
+  };
+
+  showDeposit = (ex: Exchange) => {
+    console.log('deposit');
+    this.changeModalType(ModalType.Deposits, ex);
+  };
+
+  showWithdrawal = (ex: Exchange) => {
+    console.log('withdrawal');
+    this.changeModalType(ModalType.Withdrawals, ex);
+  };
+
   render() {
     const e = this.props.exchanges;
     console.log('Exchanges Class');
 
     const components = Object.values(e).map((ex) => {
-      return <ExchangeCard exchange={ex} key={`exchangeTitle_${ex.id}`} />;
+      return <ExchangeCard
+        exchange={ex}
+        openDeposit={this.showDeposit}
+        openWithdrawal={this.showWithdrawal}
+        openAddAction={this.showAddAction}
+        key={`exchangeTitle_${ex.id}`} />;
     });
 
+    let modal = null;
+
+    const modalExchange = this.state.modalExchange;
+
+    if (modalExchange !== null) {
+      switch(this.state.modal) {
+        case ModalType.AddAction:
+          modal = <AddActionModal
+            exchange={modalExchange}
+            closeModal={this.closeModal} />;
+          break;
+        case ModalType.Deposits:
+          modal = <DepositsModal exchange={modalExchange} />;
+          break;
+        case ModalType.Withdrawals:
+          modal = <WithdrawalsModal exchange={modalExchange} />;
+          break;
+      }
+    }
+
+    let modalContainer = null;
+    if (modal !== null) {
+      modalContainer = (
+        <ModalContainer
+          close={this.closeModal}>
+          {modal}
+        </ModalContainer>);
+    }
+
     return (
-      <div className="container content section">
+      <div className='container content section'>
+        {modalContainer}
         <h1>Exchanges</h1>
-        {components}
+        <div className='block columns is-mobile is-centered is-multiline'>
+          {components}
+        </div>
       </div>
     );
   }

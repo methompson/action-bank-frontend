@@ -1,8 +1,22 @@
 import { isRecord } from 'shared/typeguards';
 
+export enum RequestStatusType {
+  Idle,
+  Pending,
+  Success,
+  Fail,
+}
+
+export interface RequestStatus {
+  status: RequestStatusType,
+  msg: string,
+}
+
 export interface ActionBankState {
   exchanges: Record<string, ExchangeData>,
   lastTimeRetrieved: number,
+  exchangeRequest: RequestStatus,
+  depositActionRequest: RequestStatus,
 }
 
 export interface NewExchange {
@@ -19,6 +33,8 @@ export interface ExchangeData {
   withdrawalActions: WithdrawalActionData[],
   deposits: DepositData[],
   withdrawals: WithdrawalData[],
+  depositCount: number,
+  withdrawalCount: number,
 }
 
 export class Exchange {
@@ -31,6 +47,8 @@ export class Exchange {
     protected _withdrawalActions: WithdrawalAction[],
     protected _deposits: Deposit[],
     protected _withdrawals: Withdrawal[],
+    protected _depositCount: number,
+    protected _withdrawalCount: number,
   ) {}
 
   get id(): string { return this._id; }
@@ -41,6 +59,9 @@ export class Exchange {
   get withdrawalActions(): WithdrawalAction[] { return this._withdrawalActions; }
   get deposits(): Deposit[] { return this._deposits; }
   get withdrawals(): Withdrawal[] { return this._withdrawals; }
+
+  get depositCount(): number { return this._depositCount; }
+  get withdrawalCount(): number { return this._withdrawalCount; }
 
   toJSON() {
     return {
@@ -82,6 +103,8 @@ export class Exchange {
       withdrawalActions: withdrawalActionData,
       deposits: depositData,
       withdrawals: withdrawalData,
+      depositCount: this.depositCount,
+      withdrawalCount: this.withdrawalCount,
     };
   }
 
@@ -159,6 +182,8 @@ export class Exchange {
       withdrawalActions,
       deposits,
       withdrawals,
+      ex.depositCount,
+      ex.withdrawalCount,
     );
   }
 
@@ -172,6 +197,8 @@ export class Exchange {
       [],
       [],
       [],
+      0,
+      0,
     );
   }
 
@@ -186,6 +213,8 @@ export class Exchange {
       || !Array.isArray(results.withdrawalActions)
       || !Array.isArray(results.deposits)
       || !Array.isArray(results.withdrawals)
+      || typeof results.depositCount !== 'number'
+      || typeof results.withdrawalCount !== 'number'
     ) {
       throw new Error('Invalid Type');
     }
@@ -213,11 +242,19 @@ export class Exchange {
       withdrawalActions,
       deposits,
       withdrawals,
+      results.depositCount,
+      results.withdrawalCount,
     );
   }
 }
 
-export interface NewDepositAction {}
+export interface NewDepositActionData {
+  exchangeId: string,
+  name: string,
+  uom: string,
+  uomQuantity: number,
+  depositQuantity: number,
+}
 
 export interface DepositActionData {
   id: string,
@@ -258,6 +295,7 @@ export class DepositAction {
     if (!isRecord(value)) return false;
 
     return value !== null
+      && value !== undefined
       && typeof value.id === 'string'
       && typeof value.name === 'string'
       && typeof value.uom === 'string'
@@ -268,6 +306,16 @@ export class DepositAction {
   static fromDepositActionData(value: DepositActionData): DepositAction {
     return new DepositAction(
       value.id,
+      value.name,
+      value.uom,
+      value.uomQuantity,
+      value.depositQuantity,
+    );
+  }
+
+  static fromNewDepositActionData(value: NewDepositActionData, id: string): DepositAction {
+    return new DepositAction(
+      id,
       value.name,
       value.uom,
       value.uomQuantity,
@@ -288,7 +336,12 @@ export class DepositAction {
   }
 }
 
-export interface NewWithdrawalAction {}
+export interface NewWithdrawalAction {
+  name: string,
+  uom: string,
+  uomQuantity: number,
+  withdrawalQuantity: number,
+}
 
 export interface WithdrawalActionData {
   id: string,

@@ -6,6 +6,8 @@ import { Provider } from 'react-redux';
 import 'css/bulma-config.css';
 import 'css/styles.css';
 
+import '@fortawesome/fontawesome-free/js/all';
+
 import App from './app';
 import reportWebVitals from './reportWebVitals';
 

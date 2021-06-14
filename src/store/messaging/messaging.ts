@@ -104,6 +104,7 @@ const messagingStoreSlice = createSlice({
       state.messages[msg.id] = msg;
     },
     removeMessage(state, action: PayloadAction<RemoveMessageType>) {
+      console.log('removeMessage');
       const msg = state.messages[action.payload.id];
 
       if (msg == null) return;
