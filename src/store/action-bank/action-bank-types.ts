@@ -17,6 +17,7 @@ export interface ActionBankState {
   lastTimeRetrieved: number,
   exchangeRequest: RequestStatus,
   depositActionRequest: RequestStatus,
+  withdrawalActionRequest: RequestStatus,
 }
 
 export interface NewExchange {
@@ -162,7 +163,7 @@ export class Exchange {
     });
 
     const withdrawalActions = ex.withdrawalActions.map((el) => {
-      return WithdrawalAction.fromWithdrawalAction(el);
+      return WithdrawalAction.fromWithdrawalActionData(el);
     });
 
     const deposits = ex.deposits.map((el) => {
@@ -256,17 +257,14 @@ export interface NewDepositActionData {
   depositQuantity: number,
 }
 
-export interface DepositActionData {
+export interface DepositActionData extends NewDepositActionData {
   id: string,
-  name: string,
-  uom: string,
-  uomQuantity: number,
-  depositQuantity: number,
 }
 
 export class DepositAction {
   constructor(
     protected _id: string,
+    protected _exchangeId: string,
     protected _name: string,
     protected _uom: string,
     protected _uomQuantity: number,
@@ -274,6 +272,7 @@ export class DepositAction {
   ) {}
 
   get id(): string { return this._id; }
+  get exchangeId(): string { return this._exchangeId; }
   get name(): string { return this._name; }
   get uom(): string { return this._uom; }
   get uomQuantity(): number { return this._uomQuantity; }
@@ -282,6 +281,7 @@ export class DepositAction {
   get depositActionData(): DepositActionData {
     return {
       id: this.id,
+      exchangeId: this.exchangeId,
       name: this.name,
       uom: this.uom,
       uomQuantity: this.uomQuantity,
@@ -297,6 +297,7 @@ export class DepositAction {
     return value !== null
       && value !== undefined
       && typeof value.id === 'string'
+      && typeof value.exchangeId === 'string'
       && typeof value.name === 'string'
       && typeof value.uom === 'string'
       && typeof value.uomQuantity === 'number'
@@ -306,6 +307,7 @@ export class DepositAction {
   static fromDepositActionData(value: DepositActionData): DepositAction {
     return new DepositAction(
       value.id,
+      value.exchangeId,
       value.name,
       value.uom,
       value.uomQuantity,
@@ -316,6 +318,7 @@ export class DepositAction {
   static fromNewDepositActionData(value: NewDepositActionData, id: string): DepositAction {
     return new DepositAction(
       id,
+      value.exchangeId,
       value.name,
       value.uom,
       value.uomQuantity,
@@ -328,6 +331,7 @@ export class DepositAction {
 
     return new DepositAction(
       value.id,
+      value.exchangeId,
       value.name,
       value.uom,
       value.uomQuantity,
@@ -336,24 +340,22 @@ export class DepositAction {
   }
 }
 
-export interface NewWithdrawalAction {
+export interface NewWithdrawalActionData {
+  exchangeId: string,
   name: string,
   uom: string,
   uomQuantity: number,
   withdrawalQuantity: number,
 }
 
-export interface WithdrawalActionData {
+export interface WithdrawalActionData extends NewWithdrawalActionData{
   id: string,
-  name: string,
-  uom: string,
-  uomQuantity: number,
-  withdrawalQuantity: number,
 }
 
 export class WithdrawalAction {
   constructor(
     protected _id: string,
+    protected _exchangeId: string,
     protected _name: string,
     protected _uom: string,
     protected _uomQuantity: number,
@@ -361,6 +363,7 @@ export class WithdrawalAction {
   ) {}
 
   get id(): string { return this._id; }
+  get exchangeId(): string { return this._exchangeId; }
   get name(): string { return this._name; }
   get uom(): string { return this._uom; }
   get uomQuantity(): number { return this._uomQuantity; }
@@ -369,6 +372,7 @@ export class WithdrawalAction {
   get withdrawalActionData(): WithdrawalActionData {
     return {
       id: this.id,
+      exchangeId: this.exchangeId,
       name: this.name,
       uom: this.uom,
       uomQuantity: this.uomQuantity,
@@ -383,15 +387,28 @@ export class WithdrawalAction {
 
     return value !== null
       && typeof value.id === 'string'
+      && typeof value.exchangeId === 'string'
       && typeof value.name === 'string'
       && typeof value.uom === 'string'
       && typeof value.uomQuantity === 'number'
       && typeof value.withdrawalQuantity === 'number';
   }
 
-  static fromWithdrawalAction(value: WithdrawalActionData): WithdrawalAction {
+  static fromWithdrawalActionData(value: WithdrawalActionData): WithdrawalAction {
     return new WithdrawalAction(
       value.id,
+      value.exchangeId,
+      value.name,
+      value.uom,
+      value.uomQuantity,
+      value.withdrawalQuantity,
+    );
+  }
+
+  static fromNewWithdrawalActionData(value: NewWithdrawalActionData, id: string): WithdrawalAction {
+    return new WithdrawalAction(
+      id,
+      value.exchangeId,
       value.name,
       value.uom,
       value.uomQuantity,
@@ -404,6 +421,7 @@ export class WithdrawalAction {
 
     return new WithdrawalAction(
       value.id,
+      value.exchangeId,
       value.name,
       value.uom,
       value.uomQuantity,

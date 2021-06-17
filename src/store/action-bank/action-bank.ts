@@ -14,7 +14,7 @@ import {
   ActionBankState,
   NewExchange,
   Exchange,
-  NewWithdrawalAction,
+  NewWithdrawalActionData,
   WithdrawalAction,
   NewDepositActionData,
   DepositAction,
@@ -24,9 +24,12 @@ import {
   Deposit,
   ExchangeData,
   DepositActionData,
+  WithdrawalActionData,
 } from './action-bank-types';
 
-const apolloCache = new InMemoryCache();
+const apolloCache = new InMemoryCache({
+  resultCaching: false,
+});
 
 const makeApolloClient = (authToken: string) => {
   const httpLink = createHttpLink({
@@ -39,13 +42,14 @@ const makeApolloClient = (authToken: string) => {
   return new ApolloClient({
     link: httpLink,
     cache: apolloCache,
+    defaultOptions: {
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
   });
 };
-
-interface SetDepositActionType {
-  depositAction: DepositActionData,
-  exchangeId: string,
-}
 
 const initialState: ActionBankState = {
   exchanges: {},
@@ -55,6 +59,10 @@ const initialState: ActionBankState = {
     msg: '',
   },
   depositActionRequest: {
+    status: RequestStatusType.Idle,
+    msg: '',
+  },
+  withdrawalActionRequest: {
     status: RequestStatusType.Idle,
     msg: '',
   },
@@ -84,27 +92,44 @@ const actionBankSlice = createSlice({
     deleteExchange(state, action: PayloadAction<string>) {
       delete state.exchanges[action.payload];
     },
+
     setDepositActionStatus(state, action: PayloadAction<RequestStatus>) {
       state.depositActionRequest = action.payload;
       console.log('Setting Deposit Action Status');
     },
-    setDepositAction(state, action: PayloadAction<SetDepositActionType>) {
+    setDepositAction(state, action: PayloadAction<DepositActionData>) {
       const exDat = state.exchanges[action.payload.exchangeId];
 
       if (exDat === null) return;
 
       const ex = Exchange.fromExchangeData(exDat);
 
-      const depAction = DepositAction.fromDepositActionData(action.payload.depositAction);
+      const depAction = DepositAction.fromDepositActionData(action.payload);
 
       ex.depositActions.push(depAction);
 
       state.exchanges[ex.id] = ex.exchangeData;
     },
-    deleteDepositAction(state, action: PayloadAction<DepositAction>) {},
+    deleteDepositAction(state, action: PayloadAction<DepositActionData>) {},
 
-    setWithdrawalAction(state, action: PayloadAction<WithdrawalAction>) {},
-    deleteWithdrawalAction(state, action: PayloadAction<WithdrawalAction>) {},
+    setWithdrawalActionStatus(state, action: PayloadAction<RequestStatus>) {
+      state.withdrawalActionRequest = action.payload;
+      console.log('Setting Withdrawal Action Status');
+    },
+    setWithdrawalAction(state, action: PayloadAction<WithdrawalActionData>) {
+      const exDat = state.exchanges[action.payload.exchangeId];
+
+      if (exDat === null) return;
+
+      const ex = Exchange.fromExchangeData(exDat);
+
+      const withdrawalAction = WithdrawalAction.fromWithdrawalActionData(action.payload);
+
+      ex.withdrawalActions.push(withdrawalAction);
+
+      state.exchanges[ex.id] = ex.exchangeData;
+    },
+    deleteWithdrawalAction(state, action: PayloadAction<WithdrawalActionData>) {},
 
     setDeposit(state, action: PayloadAction<Deposit>) {},
     deleteDeposit(state, action: PayloadAction<Deposit>) {},
@@ -142,6 +167,7 @@ const getAllExchanges = createAsyncThunk<unknown, undefined, { state: StoreType 
           totalCurrency,
           depositActions {
             id,
+            exchangeId,
             name,
             uom,
             uomQuantity,
@@ -152,6 +178,7 @@ const getAllExchanges = createAsyncThunk<unknown, undefined, { state: StoreType 
           },
           withdrawalActions {
             id,
+            exchangeId,
             name,
             uom,
             uomQuantity,
@@ -284,6 +311,7 @@ const addDepositAction = createAsyncThunk<unknown, NewDepositActionData, {state:
       status: RequestStatusType.Pending,
       msg: '',
     }));
+
     const mutation = gql`
       mutation depositAction(
         $exchangeId: String!,
@@ -327,20 +355,18 @@ const addDepositAction = createAsyncThunk<unknown, NewDepositActionData, {state:
 
       const depositAction = DepositAction.fromNewDepositActionData(dat, rawActionId);
 
-      thunkAPI.dispatch(actionBankSlice.actions.setDepositAction({
-        exchangeId: dat.exchangeId,
-        depositAction: depositAction.depositActionData,
+      thunkAPI.dispatch(actionBankSlice.actions.setDepositAction(
+        depositAction.depositActionData
+      ));
+
+      thunkAPI.dispatch(actionBankSlice.actions.setDepositActionStatus({
+        status: RequestStatusType.Success,
+        msg: '',
       }));
 
-      setTimeout(() => {
-        thunkAPI.dispatch(actionBankSlice.actions.setDepositActionStatus({
-          status: RequestStatusType.Success,
-          msg: '',
-        }));
-      }, 1500);
       console.log('Done Adding Action');
     } catch(e) {
-      const err = `Error Adding New Action: $e`;
+      const err = `Error Adding New Action: ${e}`;
       thunkAPI.dispatch(actionBankSlice.actions.setDepositActionStatus({
         status: RequestStatusType.Fail,
         msg: err,
@@ -364,11 +390,75 @@ const deleteDepositAction = createAsyncThunk(
  * Withdrawal Actions
 **************************************************************************************/
 
-const addWithdrawalAction = createAsyncThunk<unknown, NewWithdrawalAction, {state: StoreType}>(
+const addWithdrawalAction = createAsyncThunk<unknown, NewWithdrawalActionData, {state: StoreType}>(
   'actionBank/addWithdrawalAction',
-  async(dat: NewWithdrawalAction, thunkAPI) => {
-    const a = dat.name;
-    console.log('addWithdrawalAction', a);
+  async(dat: NewWithdrawalActionData, thunkAPI) => {
+    thunkAPI.dispatch(actionBankSlice.actions.setWithdrawalActionStatus({
+      status: RequestStatusType.Pending,
+      msg: '',
+    }));
+
+    const mutation = gql`
+      mutation withdrawalAction(
+        $exchangeId: String!,
+        $name: String!,
+        $uom: String!,
+        $uomQuantity: Int!,
+        $withdrawalQuantity: Int!,
+        $enabled: Boolean!,
+      ) {
+        addWithdrawalAction(
+          exchangeId: $exchangeId,
+          name: $name,
+          uom: $uom,
+          uomQuantity: $uomQuantity,
+          withdrawalQuantity: $withdrawalQuantity,
+          enabled: $enabled,
+        ) {
+          id,
+        }
+      }
+    `;
+
+    const token = thunkAPI.getState().auth.jwt;
+
+    const apolloClient = makeApolloClient(token);
+
+    try {
+      const res = await apolloClient.mutate({
+        mutation,
+        variables: {
+          exchangeId: dat.exchangeId,
+          name: dat.name,
+          uom: dat.uom,
+          uomQuantity: dat.uomQuantity,
+          withdrawalQuantity: dat.withdrawalQuantity,
+          enabled: true,
+        },
+      });
+
+      const rawActionId = res.data.addWithdrawalAction.id;
+
+      const withdrawalAction = WithdrawalAction.fromNewWithdrawalActionData(dat, rawActionId);
+
+      thunkAPI.dispatch(actionBankSlice.actions.setWithdrawalAction(
+        withdrawalAction.withdrawalActionData
+      ));
+
+      thunkAPI.dispatch(actionBankSlice.actions.setWithdrawalActionStatus({
+        status: RequestStatusType.Success,
+        msg: '',
+      }));
+
+      console.log('Done Adding Action');
+    } catch(e) {
+      const err = `Error Adding New Action: $e`;
+      thunkAPI.dispatch(actionBankSlice.actions.setWithdrawalActionStatus({
+        status: RequestStatusType.Fail,
+        msg: err,
+      }));
+      console.error(err);
+    }
   }
 );
 

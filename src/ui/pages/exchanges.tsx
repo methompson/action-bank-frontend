@@ -7,6 +7,8 @@ import {
   selectors,
 } from 'store';
 
+import { MessageCreationRequest } from 'store/messaging/messaging';
+
 import { Exchange } from 'store/action-bank/action-bank-types';
 
 import ExchangeCard from 'ui/components/exchangeCard';
@@ -20,6 +22,7 @@ interface ExchangesClassPropsType {
   exchanges: Exchange[],
   lastExchangeQuery: number,
   getAllExchanges: () => void,
+  addInfoMessage: (req: MessageCreationRequest) => void,
 }
 
 enum ModalType {
@@ -46,6 +49,16 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
 
   checkExchanges = () => {
     this.props.getAllExchanges();
+  };
+
+  refreshExchanges = () => {
+    console.log('Refreshing');
+    this.props.addInfoMessage({
+      message: 'Refreshing Exchanges',
+    });
+
+    this.checkExchanges();
+    console.log("checking");
   };
 
   componentDidMount = () => {
@@ -126,7 +139,12 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
     return (
       <div className='container content section'>
         {modalContainer}
-        <h1>Exchanges</h1>
+        <h1 style={{display: 'inline-block'}}>Exchanges</h1>
+        <button className={'button'} onClick={this.refreshExchanges}>
+          <span className='icon'>
+            <i className="fas fa-sync-alt"></i>
+          </span>
+        </button>
         <div className='block columns is-mobile is-centered is-multiline'>
           {components}
         </div>
@@ -145,6 +163,7 @@ const mapStateToProps = (state: StoreType) => {
 
 const mapDispatchToProps = {
   getAllExchanges: actions.getAllExchanges,
+  addInfoMessage: actions.addInfoMessage,
 };
 
 const ConnectedExchanges = connect(mapStateToProps, mapDispatchToProps)(ExchangesClass);

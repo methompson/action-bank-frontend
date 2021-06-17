@@ -16,7 +16,7 @@ interface RemoveMessageType {
   id: string,
 }
 
-interface MessageCreationRequest {
+export interface MessageCreationRequest {
   message: string,
   duration?: number,
 }

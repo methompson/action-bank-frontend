@@ -14,11 +14,13 @@ let prevActionStatus: RequestStatusType | null;
 export default function AddAction(props: addExchangeProps) {
   const dispatch = useDispatch();
 
-  const [actionType, setActionType] = useState('Test');
+  const [actionType, setActionType] = useState('');
   const [actionName, setActionName] = useState('Test');
   const [uom, setUom] = useState('Test');
   const [uomQuant, setUomQuant] = useState(1);
   const [transQuant, setTransQuant] = useState(1);
+
+  const [busy, setBusy] = useState(false);
 
   const [isActionTypeValid, setIsActionTypeValid] = useState(true);
   const [isActionNameValid, setIsActionNameValid] = useState(true);
@@ -26,8 +28,17 @@ export default function AddAction(props: addExchangeProps) {
   const [isUomQuantValid, setIsUomQuantValid] = useState(true);
   const [isTransQuantValid, setIsTransQuantValid] = useState(true);
 
-  const { status, msg } = useSelector(selectors.depositActionStatus);
+  const depositActionStatus = useSelector(selectors.depositActionStatus);
+  const withdrawalActionStatus = useSelector(selectors.depositActionStatus);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    if (actionType === '') return;
+
+    const { status, msg } = actionType === 'deposit'
+      ? depositActionStatus
+      : withdrawalActionStatus;
+
     if (prevActionStatus === RequestStatusType.Pending){
       if (status === RequestStatusType.Success) {
         props.closeModal();
@@ -36,8 +47,9 @@ export default function AddAction(props: addExchangeProps) {
         }));
       }
       else if (status === RequestStatusType.Fail) {
+        setBusy(false);
         dispatch(actions.addErrorMessage({
-          message: `Error Adding new action. ${msg}`,
+          message: msg,
         }));
       }
     }
@@ -73,6 +85,8 @@ export default function AddAction(props: addExchangeProps) {
       return;
     }
 
+    setBusy(true);
+
     if (actionType === 'deposit') {
       dispatch(actions.addDepositAction({
         exchangeId: props.exchange.id,
@@ -83,6 +97,7 @@ export default function AddAction(props: addExchangeProps) {
       }));
     } else {
       dispatch(actions.addWithdrawalAction({
+        exchangeId: props.exchange.id,
         name: actionName,
         uom: uom,
         uomQuantity: uomQuant,
@@ -174,8 +189,8 @@ export default function AddAction(props: addExchangeProps) {
       <div className='field'>
         <div className='control'>
           <button
-            disabled={status === RequestStatusType.Pending}
-            className={'button is-primary' + (status === RequestStatusType.Pending ? ' is-loading' : '')}
+            disabled={busy}
+            className={'button is-primary' + (busy ? ' is-loading' : '')}
             onClick={addNewAction}>
             Save
           </button>
