@@ -1,12 +1,23 @@
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { Exchange } from 'store/action-bank/action-bank-types';
+import { actions, selectors } from 'store';
+import {
+  DepositAction,
+  Exchange,
+  RequestStatusType,
+} from 'store/action-bank/action-bank-types';
 
 interface DepositsProps {
   exchange: Exchange,
+  closeModal: () => void,
 }
 
+let prevActionStatus: RequestStatusType | null;
+
 export default function DepositsModal(props: DepositsProps) {
+  const dispatch = useDispatch();
+
   const { depositActions } = props.exchange;
   const initialDepositAction = depositActions[0]?.name ?? '';
 
@@ -18,27 +29,37 @@ export default function DepositsModal(props: DepositsProps) {
 
   const [busy, setBusy] = useState(false);
 
-  const changeUomQuantity = (ev:ChangeEvent<HTMLInputElement>) => setUomQuant(parseFloat(ev.target.value));
-  const changeDepositAction = (ev:ChangeEvent<HTMLSelectElement>) => setDepositAction(ev.target.value);
+  const depositStatus = useSelector(selectors.depositStatus);
 
-  const addNewDeposit = () => {
-    const _isDepositActionValid = depositActions.reduce((acc, cur) => {
-      if (acc === true) return true;
-      return cur.name === depositAction;
-    }, false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (prevActionStatus === RequestStatusType.Pending) {
+      if (depositStatus.status === RequestStatusType.Success) {
+        props.closeModal();
 
-    const _isUomQuantValid = uomQuant > 0;
-
-    setIsUomQuantValid(_isUomQuantValid);
-    setIsDepositActionValid(_isDepositActionValid);
-
-    if (!_isDepositActionValid || _isUomQuantValid) {
-      setBusy(false);
-      return;
+        dispatch(actions.addSuccessMessage({
+          message: `Deposited Funds`,
+        }));
+      } else if (depositStatus.status === RequestStatusType.Fail) {
+        setBusy(false);
+        dispatch(actions.addErrorMessage({
+          message: depositStatus.msg,
+        }));
+      }
     }
-  };
 
-  if (depositActions.length === 0) {
+    prevActionStatus = depositStatus.status;
+  });
+
+  let selectedDepositAction: DepositAction | null = null;
+
+  for (const action of depositActions) {
+    if (action.name === depositAction) {
+      selectedDepositAction = action;
+    }
+  }
+
+  if (depositActions.length === 0 || selectedDepositAction === null) {
     return (
       <div className='content'>
         <h3>No Deposit Actions Available.</h3>
@@ -51,20 +72,61 @@ export default function DepositsModal(props: DepositsProps) {
     return <option value={action.name} key={action.id}>{action.name}</option>;
   });
 
-  let selectedDepositAction = depositActions[0];
-
-  for (const action of depositActions) {
-    if (action.name === depositAction) {
-      selectedDepositAction = action;
+  const getDepositAction = (): DepositAction | null => {
+    for (const ac of depositActions) {
+      if (depositAction === ac.name) {
+        return ac;
+      }
     }
-  }
+
+    return null;
+  };
+
+  const addDeposit = () => {
+    const _isDepositActionValid = depositActions.reduce((acc, cur) => {
+      if (acc === true) return true;
+      return cur.name === depositAction;
+    }, false);
+
+    const _isUomQuantValid = uomQuant > 0;
+
+    setIsUomQuantValid(_isUomQuantValid);
+    setIsDepositActionValid(_isDepositActionValid);
+
+    if (!_isDepositActionValid || !_isUomQuantValid) {
+      console.log('Invalid Deposit Action or invalid uomQuant');
+      return;
+    }
+
+    const action = getDepositAction();
+
+    if (action === null) {
+      console.log('Invalid Action');
+      return;
+    }
+
+    setBusy(true);
+
+    dispatch(actions.addDeposit({
+      depositAction: action,
+      quantity: uomQuant,
+    }));
+  };
+
+  console.log('Deposit Modal');
+
+  const { depositQuantity: numerator, uomQuantity: denominator } = selectedDepositAction;
+  const totalDeposit = uomQuant * (numerator / denominator);
+
+  const changeUomQuantity = (ev:ChangeEvent<HTMLInputElement>) => setUomQuant(parseFloat(ev.target.value));
+  const changeDepositAction = (ev:ChangeEvent<HTMLSelectElement>) => setDepositAction(ev.target.value);
 
   return (
     <div className='content'>
       <h3>Deposit Some Actions</h3>
 
       <div className='field'>
-        <label className='label'>Action Type</label>
+        <label className='label'>Action</label>
         <div className='control'>
           <div className={'select' + (isDepositActionValid ? '' : ' is-danger')}>
             <select onChange={changeDepositAction} value={depositAction}>
@@ -91,16 +153,24 @@ export default function DepositsModal(props: DepositsProps) {
         </p>
       </div>
 
+      <div>
+        Total Currency To Add: {totalDeposit}
+      </div>
+      <div>
+        New Total Currency: {props.exchange.totalCurrency + totalDeposit}
+      </div>
+
       <div className='field'>
         <div className='control'>
           <button
             disabled={busy}
             className={'button is-primary' + (busy ? ' is-loading' : '')}
-            onClick={addNewDeposit}>
+            onClick={addDeposit}>
             Save
           </button>
         </div>
       </div>
+
     </div>
   );
 }

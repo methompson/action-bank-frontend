@@ -1,5 +1,5 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { useState, ChangeEvent, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { actions, selectors } from 'store';
 import { Exchange, RequestStatusType } from 'store/action-bank/action-bank-types';

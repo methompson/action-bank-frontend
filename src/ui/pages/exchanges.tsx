@@ -52,13 +52,11 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
   };
 
   refreshExchanges = () => {
-    console.log('Refreshing');
     this.props.addInfoMessage({
       message: 'Refreshing Exchanges',
     });
 
     this.checkExchanges();
-    console.log("checking");
   };
 
   componentDidMount = () => {
@@ -75,28 +73,23 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
   };
 
   closeModal = () => {
-    console.log('close');
     this.changeModalType(ModalType.None, null);
   };
 
   showAddAction = (ex: Exchange) => {
-    console.log('addAction');
     this.changeModalType(ModalType.AddAction, ex);
   };
 
   showDeposit = (ex: Exchange) => {
-    console.log('deposit');
     this.changeModalType(ModalType.Deposits, ex);
   };
 
   showWithdrawal = (ex: Exchange) => {
-    console.log('withdrawal');
     this.changeModalType(ModalType.Withdrawals, ex);
   };
 
   render() {
     const e = this.props.exchanges;
-    console.log('Exchanges Class');
 
     const components = Object.values(e).map((ex) => {
       return <ExchangeCard
@@ -119,10 +112,14 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
             closeModal={this.closeModal} />;
           break;
         case ModalType.Deposits:
-          modal = <DepositsModal exchange={modalExchange} />;
+          modal = <DepositsModal
+            exchange={modalExchange}
+            closeModal={this.closeModal} />;
           break;
         case ModalType.Withdrawals:
-          modal = <WithdrawalsModal exchange={modalExchange} />;
+          modal = <WithdrawalsModal
+            exchange={modalExchange}
+            closeModal={this.closeModal} />;
           break;
       }
     }

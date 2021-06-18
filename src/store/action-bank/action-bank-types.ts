@@ -18,6 +18,8 @@ export interface ActionBankState {
   exchangeRequest: RequestStatus,
   depositActionRequest: RequestStatus,
   withdrawalActionRequest: RequestStatus,
+  depositRequest: RequestStatus,
+  withdrawalRequest: RequestStatus,
 }
 
 export interface NewExchange {
@@ -39,6 +41,12 @@ export interface ExchangeData {
 }
 
 export class Exchange {
+  protected _depositActionMap: Record<string, DepositAction> = {};
+  protected _withdrawalActionMap: Record<string, WithdrawalAction> = {};
+
+  protected _depositMap: Record<string, Deposit> = {};
+  protected _withdrawalMap: Record<string, Withdrawal> = {};
+
   constructor(
     protected _id: string,
     protected _name: string,
@@ -50,7 +58,23 @@ export class Exchange {
     protected _withdrawals: Withdrawal[],
     protected _depositCount: number,
     protected _withdrawalCount: number,
-  ) {}
+  ) {
+    for (const action of _depositActions) {
+      this._depositActionMap[action.id] = action;
+    }
+
+    for (const action of _withdrawalActions) {
+      this._withdrawalActionMap[action.id] = action;
+    }
+
+    for (const dep of _deposits) {
+      this._depositMap[dep.id] = dep;
+    }
+
+    for (const wd of _withdrawals) {
+      this._withdrawalMap[wd.id] = wd;
+    }
+  }
 
   get id(): string { return this._id; }
   get name(): string { return this._name; }
@@ -107,6 +131,52 @@ export class Exchange {
       depositCount: this.depositCount,
       withdrawalCount: this.withdrawalCount,
     };
+  }
+
+  getDepositActionById(id: string) { return this._depositActionMap[id]; }
+  getWithdrawalActionById(id: string) { return this._withdrawalActionMap[id]; }
+
+  addDepositAction(action: DepositAction) {
+    this._depositActions.push(action);
+    this._depositActionMap[action.id] = action;
+  }
+
+  addWithdrawalAction(action: WithdrawalAction) {
+    this._withdrawalActions.push(action);
+    this._withdrawalActionMap[action.id] = action;
+  }
+
+  getDepositById(id: string) { return this._depositMap[id]; }
+  getWithdrawalById(id: string) { return this._withdrawalMap[id]; }
+
+  addDeposit(deposit: Deposit, depositCount?: number, totalCurrency?: number) {
+    this._deposits.push(deposit);
+    this._depositMap[deposit.id] = deposit;
+
+    if (depositCount !== undefined) {
+      this._depositCount = depositCount;
+    } else {
+      this._depositCount += 1;
+    }
+
+    if (totalCurrency !== undefined) {
+      this._totalCurrency = totalCurrency;
+    }
+  }
+
+  addWithdrawal(withdrawal: Withdrawal, withdrawalCount?: number, totalCurrency?: number) {
+    this._withdrawals.push(withdrawal);
+    this._withdrawalMap[withdrawal.id] = withdrawal;
+
+    if (withdrawalCount !== undefined) {
+      this._withdrawalCount = withdrawalCount;
+    } else {
+      this._withdrawalCount += 1;
+    }
+
+    if (totalCurrency !== undefined) {
+      this._totalCurrency = totalCurrency;
+    }
   }
 
   static isExchange(value: Exchange | unknown | null | undefined): value is Exchange {
@@ -430,10 +500,14 @@ export class WithdrawalAction {
   }
 }
 
-export interface NewDeposit {}
+export interface NewDeposit {
+  depositAction: DepositAction,
+  quantity: number,
+}
 
 export interface DepositData {
   id: string,
+  exchangeId: string,
   depositActionId: string,
   depositActionName: string,
   uomQuantity: number,
@@ -441,9 +515,16 @@ export interface DepositData {
   quantity: number,
 }
 
+export interface AddDepositData {
+  depositData: DepositData,
+  totalDeposits: number,
+  totalFunds: number,
+}
+
 export class Deposit {
   constructor(
     protected _id: string,
+    protected _exchangeId: string,
     protected _depositActionId: string,
     protected _depositActionName: string,
     protected _uomQuantity: number,
@@ -452,6 +533,7 @@ export class Deposit {
   ) {}
 
   get id(): string { return this._id; }
+  get exchangeId(): string { return this._exchangeId; }
   get depositActionId(): string { return this._depositActionId; }
   get depositActionName(): string { return this._depositActionName; }
   get uomQuantity(): number { return this._uomQuantity; }
@@ -461,6 +543,7 @@ export class Deposit {
   get depositData(): DepositData {
     return {
       id: this.id,
+      exchangeId: this.exchangeId,
       depositActionId: this.depositActionId,
       depositActionName: this.depositActionName,
       uomQuantity: this.uomQuantity,
@@ -476,6 +559,7 @@ export class Deposit {
 
     return value !== null
       && typeof value.id === 'string'
+      && typeof value.exchangeId === 'string'
       && typeof value.depositActionId === 'string'
       && typeof value.depositActionName === 'string'
       && typeof value.uomQuantity === 'number'
@@ -486,6 +570,7 @@ export class Deposit {
   static fromDepositData(value: DepositData): Deposit {
     return new Deposit(
       value.id,
+      value.exchangeId,
       value.depositActionId,
       value.depositActionName,
       value.uomQuantity,
@@ -499,6 +584,7 @@ export class Deposit {
 
     return new Deposit(
       value.id,
+      value.exchangeId,
       value.depositActionId,
       value.depositActionName,
       value.uomQuantity,
@@ -506,12 +592,28 @@ export class Deposit {
       value.quantity,
     );
   }
+
+  static fromNewDeposit(id: string, quantity: number, depositAction: DepositAction): Deposit {
+    return new Deposit(
+      id,
+      depositAction.exchangeId,
+      depositAction.id,
+      depositAction.name,
+      depositAction.uomQuantity,
+      depositAction.depositQuantity,
+      quantity,
+    );
+  }
 }
 
-export interface NewWithdrawal {}
+export interface NewWithdrawal {
+  withdrawalAction: WithdrawalAction,
+  quantity: number,
+}
 
 export interface WithdrawalData {
   id: string,
+  exchangeId: string,
   withdrawalActionId: string,
   withdrawalActionName: string,
   uomQuantity: number,
@@ -519,9 +621,16 @@ export interface WithdrawalData {
   quantity: number,
 }
 
+export interface AddWithdrawalData {
+  withdrawalData: WithdrawalData,
+  totalWithdrawals: number,
+  totalFunds: number,
+}
+
 export class Withdrawal {
   constructor(
     protected _id: string,
+    protected _exchangeId: string,
     protected _withdrawalActionId: string,
     protected _withdrawalActionName: string,
     protected _uomQuantity: number,
@@ -539,6 +648,7 @@ export class Withdrawal {
   get withdrawalData(): WithdrawalData {
     return {
       id: this.id,
+      exchangeId: this._exchangeId,
       withdrawalActionId: this.withdrawalActionId,
       withdrawalActionName: this.withdrawalActionName,
       uomQuantity: this.uomQuantity,
@@ -554,6 +664,7 @@ export class Withdrawal {
 
     return value !== null
       && typeof value.id === 'string'
+      && typeof value.exchangeId === 'string'
       && typeof value.withdrawalActionId === 'string'
       && typeof value.withdrawalActionName === 'string'
       && typeof value.uomQuantity === 'number'
@@ -564,6 +675,7 @@ export class Withdrawal {
   static fromWithdrawalData(value: WithdrawalData): Withdrawal {
     return new Withdrawal(
       value.id,
+      value.exchangeId,
       value.withdrawalActionId,
       value.withdrawalActionName,
       value.uomQuantity,
@@ -577,11 +689,24 @@ export class Withdrawal {
 
     return new Withdrawal(
       value.id,
+      value._exchangeId,
       value.withdrawalActionId,
       value.withdrawalActionName,
       value.uomQuantity,
       value.withdrawalQuantity,
       value.quantity,
+    );
+  }
+
+  static fromNewWithdrawal(id: string, quantity: number, withdrawalAction: WithdrawalAction): Withdrawal {
+    return new Withdrawal(
+      id,
+      withdrawalAction.exchangeId,
+      withdrawalAction.id,
+      withdrawalAction.name,
+      withdrawalAction.uomQuantity,
+      withdrawalAction.withdrawalQuantity,
+      quantity,
     );
   }
 }
