@@ -118,9 +118,13 @@ export default function WithdrawalsModal(props: WithdrawalsProps) {
 
   const { withdrawalQuantity: numerator, uomQuantity: denominator } = selectedWithdrawalAction;
   const totalWithdrawal = uomQuant * (numerator / denominator);
+  const newCurrency = props.exchange.totalCurrency - totalWithdrawal;
 
   const changeUomQuantity = (ev:ChangeEvent<HTMLInputElement>) => setUomQuant(parseFloat(ev.target.value));
   const changeWithdrawalAction = (ev:ChangeEvent<HTMLSelectElement>) => setWithdrawalAction(ev.target.value);
+
+  const buttonDisabled = busy || newCurrency < 0 || !isActionValid || !isUomQuantValid;
+
   return (
     <div className='content'>
       <h3>Withdrawal Some Actions</h3>
@@ -153,18 +157,20 @@ export default function WithdrawalsModal(props: WithdrawalsProps) {
         </p>
       </div>
 
-      <div>
-        Total Currency To Withdrawal: {totalWithdrawal}
-      </div>
+      <div className='block'>
+        <div>
+          Total Currency To Withdrawal: {totalWithdrawal}
+        </div>
 
-      <div>
-        New Total Currency: {props.exchange.totalCurrency - totalWithdrawal}
+        <div className={newCurrency < 0 ? 'has-text-danger' : ''}>
+          New Total Currency: {newCurrency.toFixed(2)}
+        </div>
       </div>
 
       <div className='field'>
         <div className='control'>
           <button
-            disabled={busy}
+            disabled={buttonDisabled}
             className={'button is-primary' + (busy ? ' is-loading' : '')}
             onClick={addWithdrawal}>
             Save

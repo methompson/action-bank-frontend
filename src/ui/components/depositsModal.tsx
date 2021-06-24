@@ -153,11 +153,13 @@ export default function DepositsModal(props: DepositsProps) {
         </p>
       </div>
 
-      <div>
-        Total Currency To Add: {totalDeposit}
-      </div>
-      <div>
-        New Total Currency: {props.exchange.totalCurrency + totalDeposit}
+      <div className='block'>
+        <div>
+          Total Currency To Add: {totalDeposit}
+        </div>
+        <div>
+          New Total Currency: {props.exchange.totalCurrency + totalDeposit}
+        </div>
       </div>
 
       <div className='field'>

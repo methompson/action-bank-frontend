@@ -22,7 +22,13 @@ export const withdrawalStatus = (state: StoreType) => state.actionBank.withdrawa
 
 export const getExchangeById = (exchangeId: string) => {
   return (state: StoreType) => {
-    return state.actionBank.exchanges[exchangeId];
+    const exchangeData = state.actionBank.exchanges[exchangeId];
+
+    if (exchangeData === null) {
+      return null;
+    }
+
+    return Exchange.fromExchangeData(exchangeData);
   };
 };
 

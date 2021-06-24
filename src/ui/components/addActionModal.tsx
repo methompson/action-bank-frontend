@@ -29,7 +29,13 @@ export default function AddAction(props: addExchangeProps) {
   const [isTransQuantValid, setIsTransQuantValid] = useState(true);
 
   const depositActionStatus = useSelector(selectors.depositActionStatus);
-  const withdrawalActionStatus = useSelector(selectors.depositActionStatus);
+  const withdrawalActionStatus = useSelector(selectors.withdrawalActionStatus);
+
+  const _isActionTypeValid = actionType.length > 0;
+  const _isActionNameValid = actionName.length > 0;
+  const _isUomValid = uom.length > 0;
+  const _isUomQuantValid = uomQuant > 0;
+  const _isTransQuantValid = transQuant > 0;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -41,6 +47,7 @@ export default function AddAction(props: addExchangeProps) {
 
     if (prevActionStatus === RequestStatusType.Pending){
       if (status === RequestStatusType.Success) {
+        setBusy(false);
         props.closeModal();
         dispatch(actions.addSuccessMessage({
           message: `Added new action: ${actionName}`,
@@ -64,12 +71,6 @@ export default function AddAction(props: addExchangeProps) {
   const changeTransQuantity = (ev:ChangeEvent<HTMLInputElement>) => setTransQuant(parseFloat(ev.target.value));
 
   const addNewAction = () => {
-    const _isActionTypeValid = actionType.length > 0;
-    const _isActionNameValid = actionName.length > 0;
-    const _isUomValid = uom.length > 0;
-    const _isUomQuantValid = uomQuant > 0;
-    const _isTransQuantValid = transQuant > 0;
-
     setIsActionTypeValid(_isActionTypeValid);
     setIsActionNameValid(_isActionNameValid);
     setIisUomValid(_isUomValid);
@@ -107,6 +108,14 @@ export default function AddAction(props: addExchangeProps) {
 
     // props.closeModal();
   };
+
+  const buttonDisabled = busy
+    || !_isActionTypeValid
+    || !_isActionNameValid
+    || !_isUomValid
+    || !_isUomQuantValid
+    || !_isTransQuantValid;
+
 
   return (
     <div className='content'>
@@ -189,7 +198,7 @@ export default function AddAction(props: addExchangeProps) {
       <div className='field'>
         <div className='control'>
           <button
-            disabled={busy}
+            disabled={buttonDisabled}
             className={'button is-primary' + (busy ? ' is-loading' : '')}
             onClick={addNewAction}>
             Save

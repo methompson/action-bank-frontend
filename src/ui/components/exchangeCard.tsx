@@ -60,7 +60,7 @@ function ExchangeCard(props: ExchangeCardProps) {
         <footer className='card-footer'>
           <ExchangeCardButton title={'Deposit'} action={props.openDeposit} exchange={props.exchange} />
           <ExchangeCardButton title={'Withdrawal'} action={props.openWithdrawal} exchange={props.exchange} />
-          <ExchangeCardButton title={'Add New Action'} action={props.openAddAction} exchange={props.exchange} />
+          <ExchangeCardButton title={'Actions'} action={props.openAddAction} exchange={props.exchange} />
         </footer>
       </div>
     </div>

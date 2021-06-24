@@ -141,9 +141,19 @@ export class Exchange {
     this._depositActionMap[action.id] = action;
   }
 
+  deleteDepositAction(action: DepositAction) {
+    delete this._depositActionMap[action.id];
+    this._depositActions = Object.values(this._depositActionMap);
+  }
+
   addWithdrawalAction(action: WithdrawalAction) {
     this._withdrawalActions.push(action);
     this._withdrawalActionMap[action.id] = action;
+  }
+
+  deleteWithdrawalAction(action: WithdrawalAction) {
+    delete this._withdrawalActionMap[action.id];
+    this._withdrawalActions = Object.values(this._withdrawalActionMap);
   }
 
   getDepositById(id: string) { return this._depositMap[id]; }

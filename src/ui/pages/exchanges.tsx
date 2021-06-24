@@ -15,7 +15,7 @@ import ExchangeCard from 'ui/components/exchangeCard';
 import ModalContainer from 'ui/components/modalContainer';
 import WithdrawalsModal from 'ui/components/withdrawalsModal';
 import DepositsModal from 'ui/components/depositsModal';
-import AddActionModal from 'ui/components/addActionModal';
+import ActionModal from 'ui/components/actionModal';
 
 interface ExchangesClassPropsType {
   loggedIn: boolean,
@@ -107,8 +107,8 @@ class ExchangesClass extends Component<ExchangesClassPropsType, ExchangesClassSt
     if (modalExchange !== null) {
       switch(this.state.modal) {
         case ModalType.AddAction:
-          modal = <AddActionModal
-            exchange={modalExchange}
+          modal = <ActionModal
+            exchangeId={modalExchange.id}
             closeModal={this.closeModal} />;
           break;
         case ModalType.Deposits:
